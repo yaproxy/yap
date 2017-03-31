@@ -94,5 +94,5 @@ func (d *Dialer) dialMulti(network, address string, ips []net.IP, port string) (
 		}
 	}
 
-	return nil, net.UnknownNetworkError("Unkown transport/direct error")
+	return nil, net.UnknownNetworkError("Unknown transport/direct error")
 }

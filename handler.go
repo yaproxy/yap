@@ -190,7 +190,6 @@ func (h *HTTPHandler) ProxyAuthorizationRequired(rw http.ResponseWriter, req *ht
 	yaputil.IOCopy(rw, resp.Body)
 }
 
-
 // HTTP2Handler serves as a HTTP2 proxy
 type HTTP2Handler struct {
 	ServerNames  []string

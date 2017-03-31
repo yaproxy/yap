@@ -156,16 +156,16 @@ func (cm *CertManager) GetConfigForClient(hello *tls.ClientHelloInfo) (*tls.Conf
 	}
 
 	/*
-	config := &tls.Config{
-		MaxVersion:               tls.VersionTLS13,
-		MinVersion:               tls.VersionTLS10,
-		Certificates:             []tls.Certificate{*cert},
-		Max0RTTDataSize:          100 * 1024,
-		Accept0RTTData:           true,
-		AllowShortHeaders:        true,
-		PreferServerCipherSuites: true,
-		NextProtos:               []string{"h2", "http/1.1"},
-	}
+		config := &tls.Config{
+			MaxVersion:               tls.VersionTLS13,
+			MinVersion:               tls.VersionTLS10,
+			Certificates:             []tls.Certificate{*cert},
+			Max0RTTDataSize:          100 * 1024,
+			Accept0RTTData:           true,
+			AllowShortHeaders:        true,
+			PreferServerCipherSuites: true,
+			NextProtos:               []string{"h2", "http/1.1"},
+		}
 	*/
 	config := &tls.Config{
 		MaxVersion:               tls.VersionTLS12,

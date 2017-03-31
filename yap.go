@@ -20,8 +20,8 @@ import (
 	"github.com/cloudflare/golibs/lrucache"
 	"github.com/naoina/toml"
 	"github.com/phuslu/glog"
-	"github.com/yaproxy/yap/yaputil"
 	"github.com/phuslu/goproxy/httpproxy/proxy"
+	"github.com/yaproxy/yap/yaputil"
 	"golang.org/x/net/http2"
 )
 
@@ -217,11 +217,11 @@ func Main() {
 	done := make(chan bool, 1)
 	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		sig := <- cancel
+		sig := <-cancel
 		glog.Infof("Yap received exit signal: %s", sig)
 		done <- true
 	}()
-	<- done
+	<-done
 	glog.Info("Yap exited")
 }
 
@@ -289,7 +289,7 @@ func newDialer() *yaputil.Dialer {
 	return dialer
 }
 
-func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transport, dialer *yaputil.Dialer, cm *CertManager) () {
+func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transport, dialer *yaputil.Dialer, cm *CertManager) {
 	var err error
 	for _, server := range config.HTTP2 {
 		handler := &HTTP2Handler{
@@ -350,7 +350,7 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 	}
 }
 
-func serveHTTP2(config Config, seen map[string]struct {}, srv *http.Server) {
+func serveHTTP2(config Config, seen map[string]struct{}, srv *http.Server) {
 	for _, server := range config.HTTP2 {
 		network := server.Network
 		if network == "" {
