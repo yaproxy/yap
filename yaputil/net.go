@@ -30,7 +30,7 @@ func LocalIPv4s() ([]net.IP, error) {
 	return ips, nil
 }
 
-func LocalPerferIPv4() (net.IP, error) {
+func LocalPreferIPv4() (net.IP, error) {
 	addr, err := net.ResolveUDPAddr("udp4", "8.8.8.8:53")
 	if err != nil {
 		return nil, err

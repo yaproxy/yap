@@ -1,20 +1,23 @@
 [default]
-log_level = 2
+#log_level = 2
 reject_nil_sni = false
-daemon_stderr = "./yap.log"
+#daemon_stderr = "./yap.log"
 
 [[http2]]
 listen = ":443"
 server_name = ["example.org"]
 proxy_fallback = "http://127.0.0.1:80"
-client_auth_pem = """"""
+cert_file = "example.org.cer"
+key_file = "example.org.key"
 
 [[http2]]
 listen = ":443"
 server_name = ["proxy.example.org"]
 proxy_fallback = "file:///var/www/html"
+cert_file = "proxy.example.org.cer"
+key_file = "proxy.example.org.key"
 proxy_auth_method = "pam"
 
 [http]
-listen = ":8087"
-parent_proxy = "https://example.org"
+listen = ":8088"
+upstream_proxy = "https://example.org"

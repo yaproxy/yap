@@ -14,10 +14,13 @@ import (
 	"github.com/yaproxy/yap/yaputil"
 )
 
+// FlushWriter is a wrapper for io.Writer.
+// When call the Write method, FlushWriter will try to call Flush after call Write for the io.Writer
 type FlushWriter struct {
 	w io.Writer
 }
 
+// Write implements io.Writer
 func (fw FlushWriter) Write(p []byte) (n int, err error) {
 	n, err = fw.w.Write(p)
 	if f, ok := fw.w.(http.Flusher); ok {
@@ -26,19 +29,21 @@ func (fw FlushWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
+// HTTPHandler serves as a HTTP proxy
 type HTTPHandler struct {
 	Dial func(network, address string) (net.Conn, error)
 	*http.Transport
 	*SimplePAM
 }
 
+// ServeHTTP implements http.Handler interface
 func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var err error
 
-	var paramsPreifx string = http.CanonicalHeaderKey("X-UrlFetch-")
+	var paramsPrefix string = http.CanonicalHeaderKey("X-UrlFetch-")
 	params := http.Header{}
 	for key, values := range req.Header {
-		if strings.HasPrefix(key, paramsPreifx) {
+		if strings.HasPrefix(key, paramsPrefix) {
 			params[key] = values
 		}
 	}
@@ -50,7 +55,7 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if h.SimplePAM != nil {
 		auth := req.Header.Get("Proxy-Authorization")
 		if auth == "" {
-			h.ProxyAuthorizationReqiured(rw, req)
+			h.ProxyAuthorizationRequired(rw, req)
 			return
 		}
 
@@ -58,8 +63,8 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		if len(parts) == 2 {
 			switch parts[0] {
 			case "Basic":
-				if userpass, err := base64.StdEncoding.DecodeString(parts[1]); err == nil {
-					parts := strings.Split(string(userpass), ":")
+				if auth, err := base64.StdEncoding.DecodeString(parts[1]); err == nil {
+					parts := strings.Split(string(auth), ":")
 					username := parts[0]
 					password := parts[1]
 
@@ -164,7 +169,8 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	yaputil.IOCopy(rw, r)
 }
 
-func (h *HTTPHandler) ProxyAuthorizationReqiured(rw http.ResponseWriter, req *http.Request) {
+// ProxyAuthorizationRequired returns Proxy-Authenticate to the client
+func (h *HTTPHandler) ProxyAuthorizationRequired(rw http.ResponseWriter, req *http.Request) {
 	data := "Proxy Authentication Required"
 	resp := &http.Response{
 		StatusCode: http.StatusProxyAuthRequired,
@@ -184,6 +190,8 @@ func (h *HTTPHandler) ProxyAuthorizationReqiured(rw http.ResponseWriter, req *ht
 	yaputil.IOCopy(rw, resp.Body)
 }
 
+
+// HTTP2Handler serves as a HTTP2 proxy
 type HTTP2Handler struct {
 	ServerNames  []string
 	Fallback     *url.URL
@@ -193,6 +201,7 @@ type HTTP2Handler struct {
 	*SimplePAM
 }
 
+// ServeHTTP implements http.Handler interface
 func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var err error
 
@@ -204,10 +213,10 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	var h2 bool = req.ProtoMajor == 2 && req.ProtoMinor == 0
 	var isProxyRequest bool = !yaputil.ContainsString(h.ServerNames, reqHostname)
 
-	var paramsPreifx string = http.CanonicalHeaderKey("X-UrlFetch-")
+	var paramsPrefix string = http.CanonicalHeaderKey("X-UrlFetch-")
 	params := http.Header{}
 	for key, values := range req.Header {
-		if strings.HasPrefix(key, paramsPreifx) {
+		if strings.HasPrefix(key, paramsPrefix) {
 			params[key] = values
 		}
 	}
@@ -225,7 +234,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if isProxyRequest && h.SimplePAM != nil {
 		auth := req.Header.Get("Proxy-Authorization")
 		if auth == "" {
-			h.ProxyAuthorizationReqiured(rw, req)
+			h.ProxyAuthorizationRequired(rw, req)
 			return
 		}
 
@@ -233,8 +242,8 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		if len(parts) == 2 {
 			switch parts[0] {
 			case "Basic":
-				if userpass, err := base64.StdEncoding.DecodeString(parts[1]); err == nil {
-					parts := strings.Split(string(userpass), ":")
+				if auth, err := base64.StdEncoding.DecodeString(parts[1]); err == nil {
+					parts := strings.Split(string(auth), ":")
 					username = parts[0]
 					password = parts[1]
 
@@ -259,7 +268,8 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			port = "443"
 		}
 
-		glog.Infof("[%v 0x%04x %s] %s \"%s %s %s\" - -", req.TLS.ServerName, req.TLS.Version, username, req.RemoteAddr, req.Method, req.Host, req.Proto)
+		glog.Infof("[%v 0x%04x %s] %s \"%s %s %s\" - -",
+			req.TLS.ServerName, req.TLS.Version, username, req.RemoteAddr, req.Method, req.Host, req.Proto)
 
 		dial := h.Dial
 		if dial == nil {
@@ -275,6 +285,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		var w io.Writer
 		var r io.Reader
 
+		// http2 only support Flusher, http1/1.1 support Hijacker
 		if h2 {
 			flusher, ok := rw.(http.Flusher)
 			if !ok {
@@ -329,7 +340,8 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Body = nil
 	}
 
-	glog.Infof("[%v 0x%04x %s] %s \"%s %s %s\" - -", req.TLS.ServerName, req.TLS.Version, username, req.RemoteAddr, req.Method, req.URL.String(), req.Proto)
+	glog.Infof("[%v 0x%04x %s] %s \"%s %s %s\" - -",
+		req.TLS.ServerName, req.TLS.Version, username, req.RemoteAddr, req.Method, req.URL.String(), req.Proto)
 
 	if req.URL.Scheme == "" {
 		req.URL.Scheme = "http"
@@ -347,7 +359,6 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 		req.URL.Scheme = h.Fallback.Scheme
-		req.URL.Scheme = h.Fallback.Scheme
 		req.URL.Host = h.Fallback.Host
 		if ip, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
 			xff := req.Header.Get("X-Forwarded-For")
@@ -362,6 +373,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	resp, err := h.Transport.RoundTrip(req)
+	glog.Infof("%+v", req)
 	if err != nil {
 		msg := err.Error()
 		if strings.HasPrefix(msg, "Invaid DNS Record: ") {
@@ -390,7 +402,8 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	yaputil.IOCopy(rw, r)
 }
 
-func (h *HTTP2Handler) ProxyAuthorizationReqiured(rw http.ResponseWriter, req *http.Request) {
+// ProxyAuthorizationRequired returns Proxy-Authenticate to the client
+func (h *HTTP2Handler) ProxyAuthorizationRequired(rw http.ResponseWriter, req *http.Request) {
 	data := "Proxy Authentication Required"
 	resp := &http.Response{
 		StatusCode: http.StatusProxyAuthRequired,
@@ -410,13 +423,14 @@ func (h *HTTP2Handler) ProxyAuthorizationReqiured(rw http.ResponseWriter, req *h
 	yaputil.IOCopy(rw, resp.Body)
 }
 
-
-type Handler struct {
+// MultiSNHandler contains multiple server name and their handler
+type MultiSNHandler struct {
 	ServerNames []string
 	Handlers    map[string]http.Handler
 }
 
-func (h *Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+// ServeHTTP implements http.Handler interface
+func (h *MultiSNHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	handler, ok := h.Handlers[req.TLS.ServerName]
 	if !ok {
 		handler, ok = h.Handlers[h.ServerNames[0]]

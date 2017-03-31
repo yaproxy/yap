@@ -12,7 +12,9 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/cloudflare/golibs/lrucache"
@@ -31,10 +33,12 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// TCPListener customize net.TCPListener for Yap
 type TCPListener struct {
 	*net.TCPListener
 }
 
+// Accept implements Accept interface
 func (ln TCPListener) Accept() (c net.Conn, err error) {
 	tc, err := ln.AcceptTCP()
 	if err != nil {
@@ -47,6 +51,7 @@ func (ln TCPListener) Accept() (c net.Conn, err error) {
 	return tc, nil
 }
 
+// Config contains the configuration for Yap
 type Config struct {
 	Default struct {
 		LogLevel     int
@@ -66,7 +71,7 @@ type Config struct {
 		ClientAuthFile string
 		ClientAuthPem  string
 
-		ParentProxy string
+		UpstreamProxy string
 
 		ProxyFallback   string
 		DisableProxy    bool
@@ -76,12 +81,13 @@ type Config struct {
 		Network string
 		Listen  string
 
-		ParentProxy string
+		UpstreamProxy string
 
 		ProxyAuthMethod string
 	}
 }
 
+// Main loads config and start Yap
 func Main() {
 	if len(os.Args) > 1 && os.Args[1] == "-version" {
 		fmt.Print(version)
@@ -96,7 +102,130 @@ func Main() {
 	flag.Parse()
 
 	filename := flag.Arg(0)
+	tomlData, err := loadConfigData(filename)
 
+	var config Config
+	if err = toml.Unmarshal(tomlData, &config); err != nil {
+		glog.Fatalf("toml.Decode(%s) error: %+v\n", tomlData, err)
+	}
+
+	dialer := newDialer()
+
+	transport := &http.Transport{
+		Dial: dialer.Dial,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+			ClientSessionCache: tls.NewLRUClientSessionCache(1024),
+		},
+		TLSHandshakeTimeout: 16 * time.Second,
+		MaxIdleConnsPerHost: 8,
+		IdleConnTimeout:     180,
+		DisableCompression:  false,
+	}
+
+	cm := &CertManager{
+		RejectNilSni: config.Default.RejectNilSni,
+	}
+
+	// http2 server
+	http2Handler := &MultiSNHandler{
+		Handlers:    map[string]http.Handler{},
+		ServerNames: []string{},
+	}
+
+	loadHTTP2Handler(http2Handler, config, transport, dialer, cm)
+
+	http2Srv := &http.Server{
+		Handler: http2Handler,
+		TLSConfig: &tls.Config{
+			GetConfigForClient: cm.GetConfigForClient,
+		},
+	}
+
+	http2.ConfigureServer(http2Srv, &http2.Server{})
+
+	seen := make(map[string]struct{})
+	serveHTTP2(config, seen, http2Srv)
+
+	// http server
+	if config.HTTP.Listen != "" {
+		server := config.HTTP
+		network := server.Network
+		if network == "" {
+			network = "tcp"
+		}
+		addr := server.Listen
+		if _, ok := seen[network+":"+addr]; ok {
+			glog.Fatalf("Yap: addr(%#v) already listened by http2", addr)
+		}
+
+		ln, err := net.Listen(network, addr)
+		if err != nil {
+			glog.Fatalf("Listen(%s) error: %s", addr, err)
+		}
+
+		handler := &HTTPHandler{
+			Transport: transport,
+		}
+
+		if server.UpstreamProxy != "" {
+			handler.Transport = &http.Transport{}
+			*handler.Transport = *transport
+
+			fixedURL, err := url.Parse(server.UpstreamProxy)
+			if err != nil {
+				glog.Fatalf("url.Parse(%#v) error: %+v", server.UpstreamProxy, err)
+			}
+
+			switch fixedURL.Scheme {
+			case "http":
+				handler.Transport.Proxy = http.ProxyURL(fixedURL)
+				fallthrough
+			default:
+				dialer2, err := proxy.FromURL(fixedURL, dialer, nil)
+				if err != nil {
+					glog.Fatalf("proxy.FromURL(%#v) error: %s", fixedURL.String(), err)
+				}
+				handler.Dial = dialer2.Dial
+				handler.Transport.Dial = dialer2.Dial
+			}
+		}
+
+		switch server.ProxyAuthMethod {
+		case "pam":
+			if _, err := exec.LookPath("python"); err != nil {
+				glog.Fatalf("pam: exec.LookPath(\"python\") error: %+v", err)
+			}
+			handler.SimplePAM = &SimplePAM{
+				CacheSize: 2048,
+			}
+		case "":
+			break
+		default:
+			glog.Fatalf("unsupport proxy_auth_method(%+v)", server.ProxyAuthMethod)
+		}
+
+		httpSrv := &http.Server{
+			Handler: handler,
+		}
+
+		glog.Infof("Yap %s ListenAndServe on %s\n", version, ln.Addr().String())
+		go httpSrv.Serve(ln)
+	}
+
+	cancel := make(chan os.Signal, 1)
+	done := make(chan bool, 1)
+	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		sig := <- cancel
+		glog.Infof("Yap received exit signal: %s", sig)
+		done <- true
+	}()
+	<- done
+	glog.Info("Yap exited")
+}
+
+func loadConfigData(filename string) ([]byte, error) {
 	var tomlData []byte
 	var err error
 	switch {
@@ -106,8 +235,8 @@ func Main() {
 		if err != nil {
 			glog.Fatalf("base64.StdEncoding.DecodeString(%+v) error: %+v", parts[1], err)
 		}
-	case os.Getenv("GOPROXY_VPS_CONFIG_URL") != "":
-		filename = os.Getenv("GOPROXY_VPS_CONFIG_URL")
+	case os.Getenv("YAP_CONFIG_URL") != "":
+		filename = os.Getenv("YAP_CONFIG_URL")
 		fallthrough
 	case strings.HasPrefix(filename, "https://"):
 		glog.Infof("http.Get(%+v) ...", filename)
@@ -133,12 +262,10 @@ func Main() {
 			glog.Fatalf("ioutil.ReadFile(%+v) error: %+v", filename, err)
 		}
 	}
+	return tomlData, err
+}
 
-	var config Config
-	if err = toml.Unmarshal(tomlData, &config); err != nil {
-		glog.Fatalf("toml.Decode(%s) error: %+v\n", tomlData, err)
-	}
-
+func newDialer() *yaputil.Dialer {
 	dialer := &yaputil.Dialer{
 		Dialer: &net.Dialer{
 			KeepAlive: 0,
@@ -151,7 +278,6 @@ func Main() {
 			DNSExpiry: 8 * time.Hour,
 		},
 	}
-
 	if ips, err := yaputil.LocalIPv4s(); err == nil {
 		for _, ip := range ips {
 			dialer.Resolver.BlackList.Set(ip.String(), struct{}{}, time.Time{})
@@ -160,27 +286,11 @@ func Main() {
 			dialer.Resolver.BlackList.Set(s, struct{}{}, time.Time{})
 		}
 	}
+	return dialer
+}
 
-	transport := &http.Transport{
-		Dial: dialer.Dial,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-			ClientSessionCache: tls.NewLRUClientSessionCache(1024),
-		},
-		TLSHandshakeTimeout: 16 * time.Second,
-		MaxIdleConnsPerHost: 8,
-		IdleConnTimeout:     180,
-		DisableCompression:  false,
-	}
-
-	cm := &CertManager{
-		RejectNilSni: config.Default.RejectNilSni,
-	}
-
-	h := &Handler{
-		Handlers:    map[string]http.Handler{},
-		ServerNames: []string{},
-	}
+func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transport, dialer *yaputil.Dialer, cm *CertManager) () {
+	var err error
 	for _, server := range config.HTTP2 {
 		handler := &HTTP2Handler{
 			ServerNames: server.ServerName,
@@ -195,13 +305,13 @@ func Main() {
 			handler.DisableProxy = server.DisableProxy
 		}
 
-		if server.ParentProxy != "" {
+		if server.UpstreamProxy != "" {
 			handler.Transport = &http.Transport{}
 			*handler.Transport = *transport
 
-			fixedURL, err := url.Parse(server.ParentProxy)
+			fixedURL, err := url.Parse(server.UpstreamProxy)
 			if err != nil {
-				glog.Fatalf("url.Parse(%#v) error: %+v", server.ParentProxy, err)
+				glog.Fatalf("url.Parse(%#v) error: %+v", server.UpstreamProxy, err)
 			}
 
 			switch fixedURL.Scheme {
@@ -209,12 +319,12 @@ func Main() {
 				handler.Transport.Proxy = http.ProxyURL(fixedURL)
 				fallthrough
 			default:
-				dialer2, err := proxy.FromURL(fixedURL, dialer, nil)
+				newDialer, err := proxy.FromURL(fixedURL, dialer, nil)
 				if err != nil {
 					glog.Fatalf("proxy.FromURL(%#v) error: %s", fixedURL.String(), err)
 				}
-				handler.Dial = dialer2.Dial
-				handler.Transport.Dial = dialer2.Dial
+				handler.Dial = newDialer.Dial
+				handler.Transport.Dial = newDialer.Dial
 			}
 		}
 
@@ -238,23 +348,16 @@ func Main() {
 			h.Handlers[serverName] = handler
 		}
 	}
+}
 
-	srv := &http.Server{
-		Handler: h,
-		TLSConfig: &tls.Config{
-			GetConfigForClient: cm.GetConfigForClient,
-		},
-	}
-
-	http2.ConfigureServer(srv, &http2.Server{})
-
-	seen := make(map[string]struct{})
+func serveHTTP2(config Config, seen map[string]struct {}, srv *http.Server) {
 	for _, server := range config.HTTP2 {
 		network := server.Network
 		if network == "" {
 			network = "tcp"
 		}
 		addr := server.Listen
+		// skip for same listen
 		if _, ok := seen[network+":"+addr]; ok {
 			continue
 		}
@@ -263,74 +366,7 @@ func Main() {
 		if err != nil {
 			glog.Fatalf("Listen(%s) error: %s", addr, err)
 		}
-		glog.Infof("yap %s ListenAndServe on %s\n", version, ln.Addr().String())
+		glog.Infof("Yap %s ListenAndServe on %s\n", version, ln.Addr().String())
 		go srv.Serve(tls.NewListener(TCPListener{ln.(*net.TCPListener)}, srv.TLSConfig))
 	}
-
-	if config.HTTP.Listen != "" {
-		server := config.HTTP
-		network := server.Network
-		if network == "" {
-			network = "tcp"
-		}
-		addr := server.Listen
-		if _, ok := seen[network+":"+addr]; ok {
-			glog.Fatalf("yap: addr(%#v) already listened by http2", addr)
-		}
-
-		ln, err := net.Listen(network, addr)
-		if err != nil {
-			glog.Fatalf("Listen(%s) error: %s", addr, err)
-		}
-
-		handler := &HTTPHandler{
-			Transport: transport,
-		}
-
-		if server.ParentProxy != "" {
-			handler.Transport = &http.Transport{}
-			*handler.Transport = *transport
-
-			fixedURL, err := url.Parse(server.ParentProxy)
-			if err != nil {
-				glog.Fatalf("url.Parse(%#v) error: %+v", server.ParentProxy, err)
-			}
-
-			switch fixedURL.Scheme {
-			case "http":
-				handler.Transport.Proxy = http.ProxyURL(fixedURL)
-				fallthrough
-			default:
-				dialer2, err := proxy.FromURL(fixedURL, dialer, nil)
-				if err != nil {
-					glog.Fatalf("proxy.FromURL(%#v) error: %s", fixedURL.String(), err)
-				}
-				handler.Dial = dialer2.Dial
-				handler.Transport.Dial = dialer2.Dial
-			}
-		}
-
-		switch server.ProxyAuthMethod {
-		case "pam":
-			if _, err := exec.LookPath("python"); err != nil {
-				glog.Fatalf("pam: exec.LookPath(\"python\") error: %+v", err)
-			}
-			handler.SimplePAM = &SimplePAM{
-				CacheSize: 2048,
-			}
-		case "":
-			break
-		default:
-			glog.Fatalf("unsupport proxy_auth_method(%+v)", server.ProxyAuthMethod)
-		}
-
-		srv := &http.Server{
-			Handler: handler,
-		}
-
-		glog.Infof("yap %s ListenAndServe on %s\n", version, ln.Addr().String())
-		go srv.Serve(ln)
-	}
-
-	select {}
 }
