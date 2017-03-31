@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/golibs/lrucache"
+	"github.com/jinzhu/copier"
 	"github.com/naoina/toml"
 	"github.com/phuslu/glog"
 	"github.com/yaproxy/libyap/proxy"
@@ -102,10 +103,10 @@ func Main() {
 	flag.Parse()
 
 	filename := flag.Arg(0)
-	tomlData, err := loadConfigData(filename)
+	tomlData, _ := loadConfigData(filename)
 
 	var config Config
-	if err = toml.Unmarshal(tomlData, &config); err != nil {
+	if err := toml.Unmarshal(tomlData, &config); err != nil {
 		glog.Fatalf("toml.Decode(%s) error: %+v\n", tomlData, err)
 	}
 
@@ -170,7 +171,7 @@ func Main() {
 
 		if server.UpstreamProxy != "" {
 			handler.Transport = &http.Transport{}
-			*handler.Transport = *transport
+			copier.Copy(handler.Transport, transport)
 
 			fixedURL, err := url.Parse(server.UpstreamProxy)
 			if err != nil {
@@ -307,7 +308,7 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 
 		if server.UpstreamProxy != "" {
 			handler.Transport = &http.Transport{}
-			*handler.Transport = *transport
+			copier.Copy(handler.Transport, transport)
 
 			fixedURL, err := url.Parse(server.UpstreamProxy)
 			if err != nil {
@@ -327,7 +328,6 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 				handler.Transport.Dial = newDialer.Dial
 			}
 		}
-
 
 		switch server.ProxyAuthMethod {
 		case "pam":
