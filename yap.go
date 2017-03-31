@@ -20,7 +20,7 @@ import (
 	"github.com/cloudflare/golibs/lrucache"
 	"github.com/naoina/toml"
 	"github.com/phuslu/glog"
-	"github.com/phuslu/goproxy/httpproxy/proxy"
+	"github.com/yaproxy/libyap/proxy"
 	"github.com/yaproxy/yap/yaputil"
 	"golang.org/x/net/http2"
 )
@@ -327,6 +327,7 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 				handler.Transport.Dial = newDialer.Dial
 			}
 		}
+
 
 		switch server.ProxyAuthMethod {
 		case "pam":
