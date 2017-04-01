@@ -33,7 +33,7 @@ func (fw FlushWriter) Write(p []byte) (n int, err error) {
 type HTTPHandler struct {
 	Dial func(network, address string) (net.Conn, error)
 	*http.Transport
-	*SimplePAM
+	Authenticator
 }
 
 // ServeHTTP implements http.Handler interface
@@ -52,7 +52,7 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		req.Header.Del(key)
 	}
 
-	if h.SimplePAM != nil {
+	if h.Authenticator != nil {
 		auth := req.Header.Get("Proxy-Authorization")
 		if auth == "" {
 			h.ProxyAuthorizationRequired(rw, req)
@@ -68,7 +68,7 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 					username := parts[0]
 					password := parts[1]
 
-					if err := h.SimplePAM.Authenticate(username, password); err != nil {
+					if err := h.Authenticator.Authenticate(username, password); err != nil {
 						http.Error(rw, "403 Forbidden", http.StatusForbidden)
 					}
 				}
@@ -197,7 +197,7 @@ type HTTP2Handler struct {
 	DisableProxy bool
 	Dial         func(network, address string) (net.Conn, error)
 	*http.Transport
-	*SimplePAM
+	Authenticator
 }
 
 // ServeHTTP implements http.Handler interface
@@ -230,7 +230,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var username, password string
-	if isProxyRequest && h.SimplePAM != nil {
+	if isProxyRequest && h.Authenticator != nil {
 		auth := req.Header.Get("Proxy-Authorization")
 		if auth == "" {
 			h.ProxyAuthorizationRequired(rw, req)
@@ -246,7 +246,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 					username = parts[0]
 					password = parts[1]
 
-					if err := h.SimplePAM.Authenticate(username, password); err != nil {
+					if err := h.Authenticator.Authenticate(username, password); err != nil {
 						http.Error(rw, "403 Forbidden", http.StatusForbidden)
 					}
 				}

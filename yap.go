@@ -74,9 +74,10 @@ type Config struct {
 
 		UpstreamProxy string
 
-		ProxyFallback   string
-		DisableProxy    bool
-		ProxyAuthMethod string
+		ProxyFallback         string
+		DisableProxy          bool
+		ProxyAuthMethod       string
+		ProxyAuthHtpasswdPath string
 	}
 	HTTP struct {
 		Network string
@@ -84,7 +85,8 @@ type Config struct {
 
 		UpstreamProxy string
 
-		ProxyAuthMethod string
+		ProxyAuthMethod       string
+		ProxyAuthHtpasswdPath string
 	}
 }
 
@@ -197,8 +199,13 @@ func Main() {
 			if _, err := exec.LookPath("python"); err != nil {
 				glog.Fatalf("pam: exec.LookPath(\"python\") error: %+v", err)
 			}
-			handler.SimplePAM = &SimplePAM{
+			handler.Authenticator = &SimplePAM{
 				CacheSize: 2048,
+			}
+		case "htpasswd":
+			handler.Authenticator = &HtpasswdFileAuth{
+				CacheSize: 2048,
+				FilePath:  server.ProxyAuthHtpasswdPath,
 			}
 		case "":
 			break
@@ -334,8 +341,13 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 			if _, err := exec.LookPath("python"); err != nil {
 				glog.Fatalf("pam: exec.LookPath(\"python\") error: %+v", err)
 			}
-			handler.SimplePAM = &SimplePAM{
+			handler.Authenticator = &SimplePAM{
 				CacheSize: 2048,
+			}
+		case "htpasswd":
+			handler.Authenticator = &HtpasswdFileAuth{
+				CacheSize: 2048,
+				FilePath:  server.ProxyAuthHtpasswdPath,
 			}
 		case "":
 			break

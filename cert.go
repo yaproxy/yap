@@ -20,12 +20,12 @@ import (
 type CertManager struct {
 	RejectNilSni bool
 
-	hosts  []string
-	certs  map[string]*tls.Certificate
-	cpools map[string]*x509.CertPool
-	ecc    *autocert.Manager
-	rsa    *autocert.Manager
-	cache  lrucache.Cache
+	hosts     []string
+	certs     map[string]*tls.Certificate
+	certsPool map[string]*x509.CertPool
+	ecc       *autocert.Manager
+	rsa       *autocert.Manager
+	cache     lrucache.Cache
 }
 
 func (cm *CertManager) Add(host string, certfile, keyfile string, pem string, cafile, capem string) error {
@@ -52,8 +52,8 @@ func (cm *CertManager) Add(host string, certfile, keyfile string, pem string, ca
 		cm.certs = make(map[string]*tls.Certificate)
 	}
 
-	if cm.cpools == nil {
-		cm.cpools = make(map[string]*x509.CertPool)
+	if cm.certsPool == nil {
+		cm.certsPool = make(map[string]*x509.CertPool)
 	}
 
 	if cm.cache == nil {
@@ -94,7 +94,7 @@ func (cm *CertManager) Add(host string, certfile, keyfile string, pem string, ca
 		certPool := x509.NewCertPool()
 		certPool.AddCert(cert)
 
-		cm.cpools[host] = certPool
+		cm.certsPool[host] = certPool
 	}
 
 	cm.hosts = append(cm.hosts, host)
@@ -175,7 +175,7 @@ func (cm *CertManager) GetConfigForClient(hello *tls.ClientHelloInfo) (*tls.Conf
 		NextProtos:               []string{"h2", "http/1.1"},
 	}
 
-	if p, ok := cm.cpools[hello.ServerName]; ok {
+	if p, ok := cm.certsPool[hello.ServerName]; ok {
 		config.ClientAuth = tls.RequireAndVerifyClientCert
 		config.ClientCAs = p
 	}

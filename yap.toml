@@ -4,20 +4,53 @@ reject_nil_sni = false
 #daemon_stderr = "./yap.log"
 
 [[http2]]
-listen = ":443"
-server_name = ["example.org"]
-proxy_fallback = "http://127.0.0.1:80"
-cert_file = "example.org.cer"
-key_file = "example.org.key"
+# The network net must be a stream-oriented network:
+# "tcp", "tcp4", "tcp6", "unix" or "unixpacket".
+network = "tcp" # optional
 
-[[http2]]
+# For TCP and UDP, the syntax of listen is "host:port"
 listen = ":443"
-server_name = ["proxy.example.org"]
-proxy_fallback = "file:///var/www/html"
-cert_file = "proxy.example.org.cer"
-key_file = "proxy.example.org.key"
-proxy_auth_method = "pam"
+
+# server name for http2 proxy
+server_name = ["example.org"]
+
+# fallback URL for non-proxy request
+proxy_fallback = "http://127.0.0.1:80" # optional
+
+# pem file for key pair contains cert and key
+# if config pem, the cert_file and key_file will be not used.
+# pem = "example.org.pem" # optional
+
+# cert file
+cert_file = "example.org.cer" # optional
+
+# key file
+key_file = "example.org.key" # optional
+
+# client_auth_file = "" # optional
+# client_auth_pem = "" # optional
+
+# upstream proxy URL
+# upstream_proxy = "https://example.org" # optional
+# disable_proxy = false # optional
+
+# proxy authenticate method, currently contains two option: "pam", "htpasswd"
+# leave blank for disable proxy authenticate
+# proxy_auth_method = "pam" # optional
+
+# htpasswd file for proxy_auth_method "htpasswd"
+# proxy_auth_htpasswd_path = "./.htpasswd"
+
+#[[http2]]
+# listen = ":443"
+# server_name = ["proxy.example.org"]
+# proxy_fallback = "file:///var/www/html"
+# cert_file = "proxy.example.org.cer"
+# key_file = "proxy.example.org.key"
+# proxy_auth_method = "pam"
 
 [http]
 listen = ":8088"
-upstream_proxy = "https://example.org"
+# upstream_proxy = "https://example.org"
+# proxy_auth_method = "htpasswd"
+# proxy_auth_htpasswd_path = "./.htpasswd"
