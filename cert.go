@@ -13,8 +13,6 @@ import (
 	"github.com/yaproxy/yap/yaputil"
 	"golang.org/x/crypto/acme/autocert"
 	"golang.org/x/net/context"
-	// FOR TLS 1.3
-	//"github.com/derekparker/delve/pkg/config"
 )
 
 type CertManager struct {
@@ -155,18 +153,6 @@ func (cm *CertManager) GetConfigForClient(hello *tls.ClientHelloInfo) (*tls.Conf
 		return nil, err
 	}
 
-	/*
-		config := &tls.Config{
-			MaxVersion:               tls.VersionTLS13,
-			MinVersion:               tls.VersionTLS10,
-			Certificates:             []tls.Certificate{*cert},
-			Max0RTTDataSize:          100 * 1024,
-			Accept0RTTData:           true,
-			AllowShortHeaders:        true,
-			PreferServerCipherSuites: true,
-			NextProtos:               []string{"h2", "http/1.1"},
-		}
-	*/
 	config := &tls.Config{
 		MaxVersion:               tls.VersionTLS12,
 		MinVersion:               tls.VersionTLS10,
