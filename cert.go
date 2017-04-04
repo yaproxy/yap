@@ -1,6 +1,7 @@
 package yap
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -12,7 +13,6 @@ import (
 	"github.com/phuslu/glog"
 	"github.com/yaproxy/yap/yaputil"
 	"golang.org/x/crypto/acme/autocert"
-	"golang.org/x/net/context"
 )
 
 type CertManager struct {
