@@ -4,11 +4,11 @@ reject_nil_sni = false
 #daemon_stderr = "./yap.log"
 
 [[http2]]
-# The network net must be a stream-oriented network:
+# The network must be a stream-oriented network:
 # "tcp", "tcp4", "tcp6", "unix" or "unixpacket".
 network = "tcp" # optional
 
-# For TCP and UDP, the syntax of listen is "host:port"
+# For TCP, the syntax of listen is "host:port"
 listen = ":443"
 
 # server name for http2 proxy

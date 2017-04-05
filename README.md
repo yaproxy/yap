@@ -8,6 +8,12 @@ Yap is a HTTP1.1/HTTP2 proxy which forked and refactored from [branch vps of Gop
 
 First of all, download the latest Yap program from [Release](https://github.com/yaproxy/yap/releases) page according to your os and arch.
 
+### Prepare for Server
+
+* A domain: `example.org`
+* Certificate for the domain: `example.org.cer`
+* Key of the certificate for the domain: `example.org.key`
+
 ### Create a config file `yap.toml`
 
 ```toml
@@ -33,9 +39,11 @@ listen = ":8088"
 ./yap yap.toml
 ```
 
-### Use HTTP2 Proxy in Chrome
+### Use Yap
 
-Add a new pac proxy configuration for you Chrome and setting:
+#### 1. Use HTTP2 Proxy in Chrome or Firefox
+
+Create a new pac proxy configuration for you browser and setting:
 
 ```pac
 function FindProxyForURL(url, host) {
@@ -43,4 +51,133 @@ function FindProxyForURL(url, host) {
 }
 ```
 
+#### 2. Use Yap in Proxy Chain
+
+```toml
+[http]
+listen = "localhost:8088"
+upstream_proxy = "https://example.org:443"
+```
+
+```shell
+./yap yap.toml
+```
+
+Config HTTP Proxy `localhost:8088` for you application.
+
 ### Enjoy you life
+
+## Configuration
+
+Yap supports multiple format configuration file such as `toml`, `yaml` and so on.
+
+### Section - default
+
+TBD
+
+### Section - http2
+
+`http2` section contains a list for HTTP2 proxy.
+
+* network - optional
+
+  The network must be a stream-oriented network:
+  > "tcp", "tcp4", "tcp6", "unix" or "unixpacket".
+
+  Currently, only support `tcp`, `tcp4`, `tcp6`.
+
+* listen
+
+  The syntax of listen is "host:port", e.g. ":443"
+
+* server_name
+
+  The server name for http2 proxy, should be a list, such as `["example.org", "yap.example.org"]`
+
+* proxy_fallback - optional
+
+  The fallback URL for non-proxy request
+
+* pem - optional
+
+  The pem file location for key pair contains cert and key, if pem is setting, the `cert_file` and `key_file` will be not used.
+
+* cert_file - optional
+
+  The certificate file location
+
+* key_file - optional
+
+  The key file location
+
+* upstream_proxy - optional
+
+  The upstream proxy URL, used for proxy chain.
+
+* proxy_auth_method - optional
+
+  The proxy authenticate method, currently contains two option: "pam", "htpasswd".
+
+  Leave it blank for disable proxy authenticate
+
+* proxy_auth_htpasswd_path - optional
+
+  The htpasswd file location.
+
+  Only used when `proxy_auth_method` is set to `htpasswd`.
+
+### Section - http
+
+* network - optional
+
+  The network must be a stream-oriented network:
+  > "tcp", "tcp4", "tcp6", "unix" or "unixpacket".
+
+  Currently, only support `tcp`, `tcp4`, `tcp6`.
+
+* listen
+
+  The syntax of listen is "host:port", e.g. ":443"
+
+* upstream_proxy - optional
+
+  The upstream proxy URL, used for proxy chain.
+
+* proxy_auth_method - optional
+
+  The proxy authenticate method, currently contains two option: "pam", "htpasswd".
+
+  Leave it blank for disable proxy authenticate
+
+* proxy_auth_htpasswd_path - optional
+
+  The htpasswd file location.
+
+  Only used when `proxy_auth_method` is set to `htpasswd`.
+
+## Use Yap in Docker
+
+Quick start:
+
+```
+docker run -d \
+    -v /path/to/yap.toml:/yap.toml \
+    -v /path/to/example.cert:/example.cert \
+    -v /path/to/example.key:/example.key \
+    -v /path/to/htpasswd:/htpasswd \
+    -p 443:443 \
+    -p 8088:8088 \
+    yaproxy/yap
+```
+
+You can find more details from [Yap in Docker hub](https://hub.docker.com/r/yaproxy/yap/).
+
+## Contributing
+
+Contributions are welcome.
+
+## Copyright / License
+
+Copyright 2013-2017 Yaproxy
+
+This software is licensed under the terms of the Apache License Version 2. See the [LICENSE](./LICENSE) file.
