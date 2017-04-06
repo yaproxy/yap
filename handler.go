@@ -70,6 +70,7 @@ func (h *HTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 					if err := h.Authenticator.Authenticate(username, password); err != nil {
 						http.Error(rw, "403 Forbidden", http.StatusForbidden)
+						return
 					}
 				}
 			default:
@@ -248,6 +249,7 @@ func (h *HTTP2Handler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 					if err := h.Authenticator.Authenticate(username, password); err != nil {
 						http.Error(rw, "403 Forbidden", http.StatusForbidden)
+						return
 					}
 				}
 			default:

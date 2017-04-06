@@ -116,7 +116,7 @@ TBD
 
 * proxy_auth_method - optional
 
-  The proxy authenticate method, currently contains two option: "pam", "htpasswd".
+  The proxy authenticate method, currently contains 3 option: "pam", "htpasswd", "build-in".
 
   Leave it blank for disable proxy authenticate
 
@@ -125,6 +125,11 @@ TBD
   The htpasswd file location.
 
   Only used when `proxy_auth_method` is set to `htpasswd`.
+
+* proxy_auth_buildin_credential - optional
+
+  The build-in authentication credential.
+  Only used when `proxy_auth_method` is set to `build-in`.
 
 ### Section - http
 
@@ -145,15 +150,56 @@ TBD
 
 * proxy_auth_method - optional
 
-  The proxy authenticate method, currently contains two option: "pam", "htpasswd".
+  The proxy authenticate method, currently contains 3 option: "pam", "htpasswd", "build-in".
 
   Leave it blank for disable proxy authenticate
+
+  Please reference [Authentication section](#authentication).
 
 * proxy_auth_htpasswd_path - optional
 
   The htpasswd file location.
 
   Only used when `proxy_auth_method` is set to `htpasswd`.
+
+* proxy_auth_buildin_credential - optional
+
+  The build-in authentication credential.
+  Only used when `proxy_auth_method` is set to `build-in`.
+
+## Authentication
+
+Yap supports two auth methods.
+
+### Build-in Authentication
+
+Set `proxy_auth_method` to `build-in`.
+Set `proxy_auth_buildin_credential` to `username:password`.
+
+### Basic Authentication - htpasswd file auth
+
+Set `proxy_auth_method` to `htpasswd`.
+Set `proxy_auth_htpasswd_path` to htpasswd file path.
+
+Configuration:
+
+```toml
+...
+proxy_auth_method = "htpasswd"
+proxy_auth_htpasswd_path = "/path/to/htpasswd"
+...
+```
+
+Generate htpasswd:
+
+```shell
+htpasswd -bc /path/to/htpasswd username passwd
+```
+
+### PAM Authentication
+
+Install `python` for PAM authentication.
+Set `proxy_auth_method` to `pam`.
 
 ## Use Yap in Docker
 

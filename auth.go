@@ -26,6 +26,8 @@ type compareFunc func(hashedPassword, password []byte) error
 var (
 	errMismatchedHashAndPassword = errors.New("mismatched hash and password")
 	errUserNameNotFound          = errors.New("user name not found")
+	errCredential                = errors.New("error credential")
+	errCredentialFormat          = errors.New("error credential format")
 
 	compareFuncs = []struct {
 		prefix  string
@@ -82,7 +84,7 @@ type Authenticator interface {
 	Authenticate(username, password string) error
 }
 
-type HtpasswdFileAuth struct {
+type HtpasswdAuth struct {
 	CacheSize uint
 	FilePath  string
 
@@ -91,12 +93,12 @@ type HtpasswdFileAuth struct {
 	once    sync.Once
 }
 
-func (h *HtpasswdFileAuth) init() {
+func (h *HtpasswdAuth) init() {
 	h.cache = lrucache.NewLRUCache(h.CacheSize)
 	h.secrets = auth.HtpasswdFileProvider(h.FilePath)
 }
 
-func (h *HtpasswdFileAuth) Authenticate(username, password string) error {
+func (h *HtpasswdAuth) Authenticate(username, password string) error {
 	h.once.Do(h.init)
 	credential := username + ":" + password
 
@@ -125,6 +127,34 @@ func (h *HtpasswdFileAuth) Authenticate(username, password string) error {
 
 	h.cache.Set(credential, struct{}{}, time.Now().Add(2*time.Hour))
 	return nil
+}
+
+type BuildInAuth struct {
+	CacheSize  uint
+	Credential string
+
+	username string
+	password string
+	cache    lrucache.Cache
+	once     sync.Once
+}
+
+func (b *BuildInAuth) init() {
+	b.cache = lrucache.NewLRUCache(b.CacheSize)
+	cred := strings.Split(b.Credential, ":")
+	if len(cred) != 2 {
+		panic(errCredentialFormat)
+	}
+	b.username = cred[0]
+	b.password = cred[1]
+}
+
+func (b *BuildInAuth) Authenticate(username, password string) error {
+	b.once.Do(b.init)
+	if b.username == username && b.password == password {
+		return nil
+	}
+	return errCredential
 }
 
 type SimplePAM struct {

@@ -34,12 +34,16 @@ key_file = "example.org.key" # optional
 # upstream_proxy = "https://example.org" # optional
 # disable_proxy = false # optional
 
-# proxy authenticate method, currently contains two option: "pam", "htpasswd"
+# proxy authenticate method, currently contains 3 option: "pam", "htpasswd", "build-in"
 # leave blank for disable proxy authenticate
 # proxy_auth_method = "pam" # optional
 
 # htpasswd file for proxy_auth_method "htpasswd"
 # proxy_auth_htpasswd_path = "./.htpasswd"
+
+# credentail for proxy_auth_method "build-in"
+# format: "username:password"
+# proxy_auth_buildin_credential = "username:password"  # optional
 
 #[[http2]]
 # listen = ":443"
@@ -54,3 +58,4 @@ listen = ":8088"
 # upstream_proxy = "https://example.org"
 # proxy_auth_method = "htpasswd"
 # proxy_auth_htpasswd_path = "./.htpasswd"
+# proxy_auth_buildin_credential = "username:password"

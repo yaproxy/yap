@@ -78,6 +78,8 @@ type Config struct {
 		DisableProxy          bool
 		ProxyAuthMethod       string
 		ProxyAuthHtpasswdPath string
+
+		ProxyAuthBuildinCredential string
 	}
 	HTTP struct {
 		Network string
@@ -87,6 +89,8 @@ type Config struct {
 
 		ProxyAuthMethod       string
 		ProxyAuthHtpasswdPath string
+
+		ProxyAuthBuildinCredential string
 	}
 }
 
@@ -203,9 +207,14 @@ func Main() {
 				CacheSize: 2048,
 			}
 		case "htpasswd":
-			handler.Authenticator = &HtpasswdFileAuth{
+			handler.Authenticator = &HtpasswdAuth{
 				CacheSize: 2048,
 				FilePath:  server.ProxyAuthHtpasswdPath,
+			}
+		case "build-in":
+			handler.Authenticator = &BuildInAuth{
+				CacheSize:  2048,
+				Credential: server.ProxyAuthBuildinCredential,
 			}
 		case "":
 			break
@@ -345,9 +354,14 @@ func loadHTTP2Handler(h *MultiSNHandler, config Config, transport *http.Transpor
 				CacheSize: 2048,
 			}
 		case "htpasswd":
-			handler.Authenticator = &HtpasswdFileAuth{
+			handler.Authenticator = &HtpasswdAuth{
 				CacheSize: 2048,
 				FilePath:  server.ProxyAuthHtpasswdPath,
+			}
+		case "build-in":
+			handler.Authenticator = &BuildInAuth{
+				CacheSize:  2048,
+				Credential: server.ProxyAuthBuildinCredential,
 			}
 		case "":
 			break
