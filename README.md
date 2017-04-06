@@ -51,7 +51,7 @@ function FindProxyForURL(url, host) {
 }
 ```
 
-#### 2. Use Yap in Proxy Chain
+#### 2. Use Yap in Proxy Chains
 
 ```toml
 [http]
@@ -69,7 +69,7 @@ Config HTTP Proxy `localhost:8088` for you application.
 
 ## Configuration
 
-Yap supports multiple format configuration file such as `toml`, `yaml` and so on.
+Yap supports multiple format configuration files such as `toml`, `yaml` and so on.
 
 ### Section - default
 
@@ -116,7 +116,7 @@ TBD
 
 * proxy_auth_method - optional
 
-  The proxy authenticate method, currently contains 3 option: "pam", "htpasswd", "build-in".
+  The proxy authenticate method, currently contains 3 options: "pam", "htpasswd", "build-in".
 
   Leave it blank for disable proxy authenticate
 
@@ -150,7 +150,7 @@ TBD
 
 * proxy_auth_method - optional
 
-  The proxy authenticate method, currently contains 3 option: "pam", "htpasswd", "build-in".
+  The proxy authenticate method, currently contains 3 options: "pam", "htpasswd", "build-in".
 
   Leave it blank for disable proxy authenticate
 
@@ -184,10 +184,10 @@ Set `proxy_auth_htpasswd_path` to htpasswd file path.
 Configuration:
 
 ```toml
-...
+# ...
 proxy_auth_method = "htpasswd"
 proxy_auth_htpasswd_path = "/path/to/htpasswd"
-...
+# ...
 ```
 
 Generate htpasswd:
