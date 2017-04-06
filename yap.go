@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	version = "r1"
+	version = "v0.1.0"
 )
 
 func init() {
