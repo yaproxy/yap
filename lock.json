@@ -35,7 +35,7 @@
         },
         {
             "name": "github.com/naoina/go-stringutil",
-            "branch": "master",
+            "version": "v0.1.0",
             "revision": "6b638e95a32d0c1131db0e7fe83775cbea4a0d0b",
             "packages": [
                 "."
