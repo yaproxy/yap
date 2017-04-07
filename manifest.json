@@ -1,0 +1,31 @@
+{
+    "dependencies": {
+        "github.com/abbot/go-http-auth": {
+            "branch": "master"
+        },
+        "github.com/cloudflare/golibs": {
+            "branch": "master"
+        },
+        "github.com/jinzhu/copier": {
+            "branch": "master"
+        },
+        "github.com/miekg/dns": {
+            "branch": "master"
+        },
+        "github.com/naoina/toml": {
+            "branch": "master"
+        },
+        "github.com/phuslu/glog": {
+            "branch": "master"
+        },
+        "github.com/yaproxy/libyap": {
+            "branch": "master"
+        },
+        "golang.org/x/crypto": {
+            "branch": "master"
+        },
+        "golang.org/x/net": {
+            "branch": "release-branch.go1.6"
+        }
+    }
+}
