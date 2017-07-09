@@ -295,13 +295,8 @@ func newDialer() *yaputil.Dialer {
 			DNSExpiry: 8 * time.Hour,
 		},
 	}
-	if ips, err := yaputil.LocalIPv4s(); err == nil {
-		for _, ip := range ips {
-			dialer.Resolver.BlackList.Set(ip.String(), struct{}{}, time.Time{})
-		}
-		for _, s := range []string{"127.0.0.1", "::1"} {
-			dialer.Resolver.BlackList.Set(s, struct{}{}, time.Time{})
-		}
+	for _, s := range []string{"127.0.0.1", "::1"} {
+		dialer.Resolver.BlackList.Set(s, struct{}{}, time.Time{})
 	}
 	return dialer
 }
