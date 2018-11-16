@@ -4,6 +4,8 @@ github.com/cloudflare/golibs v0.0.0-20170913112048-333127dbecfc h1:Dvk3ySBsOm5Ev
 github.com/cloudflare/golibs v0.0.0-20170913112048-333127dbecfc/go.mod h1:HlgKKR8V5a1wroIDDIz3/A+T+9Janfq+7n1P5sEFdi0=
 github.com/jim3ma/http-tunnel v0.0.0-20181115060705-f9fa3a104d60 h1:PEhnd7pJsJMfgpLwHBxAxHv8FIVaCyqBytQ8lvL5cw8=
 github.com/jim3ma/http-tunnel v0.0.0-20181115060705-f9fa3a104d60/go.mod h1:np41hTEh5KqcWu/Yk1hZz4N1570MXlRWWiE9A4tWQ9g=
+github.com/jim3ma/http-tunnel v0.0.0-20181116062601-794b6dffdf92 h1:K4MmAp8I0IMk7z/4RcLvCaD6/J7SC5rlcpivi8nwIjw=
+github.com/jim3ma/http-tunnel v0.0.0-20181116062601-794b6dffdf92/go.mod h1:np41hTEh5KqcWu/Yk1hZz4N1570MXlRWWiE9A4tWQ9g=
 github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3 h1:sHsPfNMAG70QAvKbddQ0uScZCHQoZsT5NykGRCeeeIs=
 github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3/go.mod h1:yL958EeXv8Ylng6IfnvG4oflryUi3vgA3xPs9hmII1s=
 github.com/miekg/dns v1.0.15 h1:9+UupePBQCG6zf1q/bGmTO1vumoG13jsrbWOSX1W6Tw=
@@ -20,6 +22,8 @@ github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/yaproxy/libyap v0.0.0-20181115110651-512ea271c8c8 h1:j0LoKLK8AkGUqGTqDV6nAzCXvYDnRFgiBD1mvAxFOCU=
 github.com/yaproxy/libyap v0.0.0-20181115110651-512ea271c8c8/go.mod h1:8BqWnQojXmA8YtnY1ezeDHp7pTUmTJFs4oHix4H9yi4=
+github.com/yaproxy/libyap v0.0.0-20181116062348-8cf81ec1017f h1:1QAX+0bIPcgDd8JGhmdSNmyhxn8ZOdKOIB/yJmAsfYc=
+github.com/yaproxy/libyap v0.0.0-20181116062348-8cf81ec1017f/go.mod h1:8BqWnQojXmA8YtnY1ezeDHp7pTUmTJFs4oHix4H9yi4=
 golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869 h1:kkXA53yGe04D0adEYJwEVQjeBppL01Exg+fnMjfUraU=
 golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/net v0.0.0-20181114220301-adae6a3d119a h1:gOpx8G595UYyvj8UK4+OFyY4rx037g3fmfhe5SasG3U=
