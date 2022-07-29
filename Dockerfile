@@ -1,14 +1,14 @@
-FROM golang:1.11-alpine as builder
+FROM golang:1.18-alpine as builder
 
 RUN apk add --no-cache --update ca-certificates git
 ADD . /go/src/github.com/yaproxy/yap/
 
-ENV CGO_ENABLED=0 GO111MODULE=on
+ENV CGO_ENABLED=0
 RUN cd /go/src/github.com/yaproxy/yap/ && \
     go mod download && \
     go build -o yap cli/main.go
 
-FROM alpine:3.8
+FROM alpine:3.16
 
 RUN apk add --no-cache --update ca-certificates && \
     mkdir /yap
