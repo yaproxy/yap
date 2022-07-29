@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/cloudflare/golibs/lrucache"
-	"github.com/phuslu/glog"
-	"github.com/yaproxy/yap/yaputil"
+	"github.com/golang/glog"
 	"golang.org/x/crypto/acme/autocert"
+
+	"github.com/yaproxy/yap/yaputil"
 )
 
 type CertManager struct {

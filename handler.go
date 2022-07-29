@@ -10,7 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/phuslu/glog"
+	"github.com/golang/glog"
+
 	"github.com/yaproxy/yap/yaputil"
 )
 

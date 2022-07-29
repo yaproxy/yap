@@ -18,12 +18,13 @@ import (
 	"time"
 
 	"github.com/cloudflare/golibs/lrucache"
+	"github.com/golang/glog"
 	"github.com/jinzhu/copier"
 	"github.com/naoina/toml"
-	"github.com/phuslu/glog"
 	"github.com/yaproxy/libyap/proxy"
-	"github.com/yaproxy/yap/yaputil"
 	"golang.org/x/net/http2"
+
+	"github.com/yaproxy/yap/yaputil"
 )
 
 var (

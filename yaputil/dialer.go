@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/phuslu/glog"
+	"github.com/golang/glog"
 )
 
 const (

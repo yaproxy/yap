@@ -1,6 +1,9 @@
 package yap
 
 import (
+	"bytes"
+	"crypto/sha1"
+	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"math/rand"
@@ -12,12 +15,9 @@ import (
 	"syscall"
 	"time"
 
-	"bytes"
-	"crypto/sha1"
-	"crypto/subtle"
 	auth "github.com/abbot/go-http-auth"
 	"github.com/cloudflare/golibs/lrucache"
-	"github.com/phuslu/glog"
+	"github.com/golang/glog"
 	"golang.org/x/crypto/bcrypt"
 )
 

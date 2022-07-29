@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/golibs/lrucache"
-	"github.com/phuslu/glog"
+	"github.com/golang/glog"
 )
 
 type MultiDialer struct {
