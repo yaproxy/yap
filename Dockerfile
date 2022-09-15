@@ -6,7 +6,7 @@ ADD . /go/src/github.com/yaproxy/yap/
 ENV CGO_ENABLED=0
 RUN cd /go/src/github.com/yaproxy/yap/ && \
     go mod download && \
-    go build -o yap cli/main.go
+    go build -o yap cmd/main.go
 
 FROM alpine:3.16
 
