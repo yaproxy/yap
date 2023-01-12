@@ -10,7 +10,7 @@ RUN cd /go/src/github.com/yaproxy/yap/ && \
 
 FROM alpine:3.16
 
-RUN apk add --no-cache --update ca-certificates && \
+RUN apk add --no-cache --update ca-certificates curl && \
     mkdir /yap
 
 COPY --from=builder /go/src/github.com/yaproxy/yap/yap /usr/local/bin/
